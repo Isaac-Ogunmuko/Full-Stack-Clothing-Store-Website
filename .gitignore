@@ -1,0 +1,6 @@
+# Backend dependencies and environment variables
+Backend/node_modules/
+Backend/.env
+
+# OS files
+.DS_Store

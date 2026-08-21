@@ -1,11 +1,41 @@
 import React from 'react';
 
+
 export default function Review() {
   return (
-    <div className="w-full min-h-screen bg-[#7a6519] text-white pt-32 px-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <h1 className="text-4xl font-serif text-amber-200">Customer Reviews</h1>
-        <p className="text-gray-200 leading-relaxed">
+    <div 
+      style={{ 
+        background: '#139b2a', 
+        minHeight: '100vh', 
+        width: '100%', 
+        color: '#ffffff', 
+        paddingTop: '160px', 
+        paddingLeft: '32px', 
+        paddingRight: '32px' 
+      }} 
+      className="review-container"
+    >
+      <div 
+        style={{ 
+          maxWidth: '56rem', 
+          marginLeft: 'auto', 
+          marginRight: 'auto', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '24px' 
+        }} 
+        className="review-content"
+      >
+        <h1 
+          style={{ fontSize: '2.25rem', fontFamily: 'serif', color: '#fde68a' }} 
+          className="review-title"
+        >
+          Customer Reviews
+        </h1>
+        <p 
+          style={{ color: '#e5e7eb', lineHeight: '1.625' }} 
+          className="review-description"
+        >
           See what our clients are saying about our African clothing and fabrics.
         </p>
       </div>

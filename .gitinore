@@ -1,0 +1,20 @@
+# 📦 Dependencies (Prevents uploading thousands of package files)
+**/node_modules/
+
+# 🔒 Secrets & Keys (Keeps your database passwords and API keys 100% private)
+**/.env
+**/.env.local
+**/.env.production
+**/.env.development
+**/.env.*
+*.env
+
+# 🚀 Build Outputs (Prevents uploading compiled production code)
+**/dist/
+**/build/
+**/.next/
+
+# 🖥️ System Files (Keeps junk files out of your repository)
+.DS_Store
+Thumbs.db
+*.log

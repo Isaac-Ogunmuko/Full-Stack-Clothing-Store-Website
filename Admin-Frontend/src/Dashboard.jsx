@@ -11,7 +11,6 @@ const Dashboard = () => {
   const [mediaFiles, setMediaFiles] = useState([]);
   const [editingId, setEditingId] = useState(null);
   
-  // Added description to editForm state
   const [editForm, setEditForm] = useState({ name: '', price: '', discountPrice: '', stock: '', category: '', description: '' });
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -95,25 +94,33 @@ const Dashboard = () => {
     setEditForm({ 
       name: product.name || '', 
       price: product.price || '', 
-      discountPrice: product.discountPrice || '', 
+      // Fallback safely to support both discountPrice and discount properties from backend/DB
+      discountPrice: product.discountPrice !== undefined ? product.discountPrice : (product.discount || ''), 
       stock: product.stock || '', 
       category: product.category || '',
       description: product.description || ''
     });
   };
 
-const handleSaveEdit = async (id) => {
+  const handleSaveEdit = async (id) => {
     try {
       console.log("Saving edit for ID:", id, "with data:", editForm);
       
+      // Clean up payload data types before sending to backend
+      const payload = {
+        ...editForm,
+        price: editForm.price !== '' ? Number(editForm.price) : 0,
+        discountPrice: editForm.discountPrice !== '' ? Number(editForm.discountPrice) : null,
+        stock: editForm.stock !== '' ? Number(editForm.stock) : 0
+      };
+
       const res = await fetch(`${API_URL}/api/products/${id}`, {
-        method: 'PUT', // or 'PATCH' if your backend uses patch
+        method: 'PUT',
         headers: { 
-          'Content-Type': 'application/json'
-          // Temporarily bypassing token check to see if auth middleware is blocking it:
-          // ...(token ? { 'Authorization': `Bearer ${token}` } : {}) 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}) 
         },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
@@ -209,6 +216,8 @@ const handleSaveEdit = async (id) => {
                     ? product.images[0] 
                     : null;
 
+                const displayDiscount = product.discountPrice !== undefined ? product.discountPrice : product.discount;
+
                 return (
                   <tr key={product._id} style={{ borderBottom: '1px solid #eee', background: product.stock < 5 ? '#ffebee' : 'transparent' }}>
                     {editingId === product._id ? (
@@ -242,7 +251,7 @@ const handleSaveEdit = async (id) => {
                         </td>
                         <td style={tdStyle}>{product.category || 'N/A'}</td>
                         <td style={tdStyle}>${product.price}</td>
-                        <td style={{...tdStyle, color: '#2e7d32', fontWeight: 'bold'}}>{product.discountPrice ? `$${product.discountPrice}` : '-'}</td>
+                        <td style={{...tdStyle, color: '#2e7d32', fontWeight: 'bold'}}>{displayDiscount ? `$${displayDiscount}` : '-'}</td>
                         <td style={tdStyle}>{product.stock} {product.stock < 5 && <span style={{color: '#c62828', fontSize: '0.8rem'}}>(Low)</span>}</td>
                         <td style={{...tdStyle, textAlign: 'right', whiteSpace: 'nowrap'}}>
                           <button onClick={() => startEditing(product)} style={editBtnStyle}>Edit</button>

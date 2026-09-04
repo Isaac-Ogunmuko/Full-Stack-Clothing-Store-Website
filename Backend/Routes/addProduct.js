@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Product = require('../Modals/Product'); 
+const Product = require('../Modals/product'); 
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');

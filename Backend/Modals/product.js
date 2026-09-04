@@ -1,19 +1,20 @@
-const mongoose = require('mongoose');
 
-const productSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  price: { type: Number, required: true },
-  originalPrice: { type: Number },
-  discountPrice: { type: Number }, // <--- Add this line so MongoDB saves it!
-  description: { type: String },
-  stock: { 
-    type: Number, 
-    required: true, 
-    default: 5, 
-    min: [0, 'Stock cannot be negative'] 
-  }, 
-  images: [{ type: String }],
-  category: { type: String },
-}, { timestamps: true });
 
-module.exports = mongoose.models.Product || mongoose.model('Product', productSchema);
+let images = [];
+if (req.files && req.files.length > 0) {
+  // Map each file to just its relative path instead of capturing req.protocol / localhost
+  images = req.files.map(file => `/uploads/${file.filename}`);
+}
+
+
+const newProduct = new Product({
+  name: req.body.name,
+  price: req.body.price,
+  discountPrice: req.body.discountPrice || null,
+  stock: req.body.stock,
+  category: req.body.category,
+  description: req.body.description,
+  images: images // Stores ['/uploads/filename.jpg'] relative path
+});
+
+await newProduct.save();

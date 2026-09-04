@@ -16,6 +16,7 @@ export default function ProductDetail() {
   useEffect(() => {
     if (!id) return;
 
+    // Use https:// explicitly to avoid Mixed Content errors
     fetch(`https://clothing-store-backend-4z5g.onrender.com/api/products/${id}`)
       .then(res => {
         if (!res.ok) throw new Error("Product not found");
@@ -59,16 +60,23 @@ export default function ProductDetail() {
 
   const productName = product.name || product.title;
   
+  // Format image URLs securely (replace http with https if needed)
+  const sanitizeImg = (url) => {
+    if (!url) return null;
+    return url.replace('http://', 'https://');
+  };
+
   let imagesList = [];
   if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-    imagesList = product.images;
+    imagesList = product.images.map(sanitizeImg);
   } else if (product.image) {
-    imagesList = [product.image, product.image, product.image];
+    const fixedImg = sanitizeImg(product.image);
+    imagesList = [fixedImg, fixedImg, fixedImg];
   }
 
-  const activeImage = imagesList[selectedImageIndex] || imagesList[0] || product.image || null;
+  const activeImage = imagesList[selectedImageIndex] || imagesList[0] || null;
 
-  // Pricing & Admin Discount Fields Support
+  // Pricing & Admin Discount Calculations
   const currentPrice = Number(product.price || product.salePrice || 0);
   const originalPrice = product.originalPrice || product.comparePrice || (product.discount ? currentPrice * 1.3 : null);
   const hasDiscount = Boolean(originalPrice && originalPrice > currentPrice);
@@ -100,7 +108,7 @@ export default function ProductDetail() {
     <div style={{ backgroundColor: "#fff", minHeight: "100vh", padding: "140px 30px 60px 30px", display: "flex", justifyContent: "center" }}>
       <div style={{ width: "100%", maxWidth: "1300px", display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: "50px", alignItems: "start" }}>
         
-        {/* Left Side: Etsy Gallery Layout */}
+        {/* Left Side: Etsy Gallery Thumbnails & Main Preview */}
         <div style={{ display: "flex", gap: "15px", width: "100%" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: "70px" }}>
             {imagesList.map((imgUrl, idx) => (

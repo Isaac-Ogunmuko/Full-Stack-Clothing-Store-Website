@@ -94,7 +94,6 @@ const Dashboard = () => {
     setEditForm({ 
       name: product.name || '', 
       price: product.price || '', 
-      // Fallback safely to support both discountPrice and discount properties from backend/DB
       discountPrice: product.discountPrice !== undefined ? product.discountPrice : (product.discount || ''), 
       stock: product.stock || '', 
       category: product.category || '',
@@ -104,9 +103,6 @@ const Dashboard = () => {
 
   const handleSaveEdit = async (id) => {
     try {
-      console.log("Saving edit for ID:", id, "with data:", editForm);
-      
-      // Clean up payload data types before sending to backend
       const payload = {
         ...editForm,
         price: editForm.price !== '' ? Number(editForm.price) : 0,
@@ -124,7 +120,6 @@ const Dashboard = () => {
       });
 
       const data = await res.json();
-      console.log("Server response:", data);
 
       if (res.ok) {
         setEditingId(null);
@@ -210,11 +205,10 @@ const Dashboard = () => {
             </thead>
             <tbody>
               {products.map(product => {
-                const imgSource = product.media && product.media.length > 0 
-                  ? product.media[0] 
-                  : product.images && product.images.length > 0 
-                    ? product.images[0] 
-                    : null;
+                const rawImg = product.media?.[0] || product.images?.[0] || null;
+                const imgSource = rawImg 
+                  ? (rawImg.startsWith('http') ? rawImg : `${API_URL}${rawImg.startsWith('/') ? '' : '/'}${rawImg}`)
+                  : null;
 
                 const displayDiscount = product.discountPrice !== undefined ? product.discountPrice : product.discount;
 
@@ -240,7 +234,7 @@ const Dashboard = () => {
                       <>
                         <td style={tdStyle}>
                           {imgSource ? (
-                            <img src={imgSource.startsWith('http') ? imgSource : `${API_URL}/${imgSource}`} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
+                            <img src={imgSource} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
                           ) : (
                             <span style={{ color: '#aaa', fontSize: '0.8rem' }}>No Image</span>
                           )}

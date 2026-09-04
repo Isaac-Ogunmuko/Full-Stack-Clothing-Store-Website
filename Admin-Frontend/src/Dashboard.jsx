@@ -52,22 +52,38 @@ const Dashboard = () => {
   const handleAddProduct = async (e) => {
     e.preventDefault();
     const formData = new FormData();
-    Object.keys(newProduct).forEach(key => formData.append(key, newProduct[key]));
     
+    // Explicitly append fields and only include discountPrice if it has a value
+    formData.append('name', newProduct.name);
+    formData.append('price', newProduct.price);
+    if (newProduct.discountPrice !== '') {
+      formData.append('discountPrice', newProduct.discountPrice);
+    }
+    formData.append('stock', newProduct.stock);
+    formData.append('category', newProduct.category);
+    formData.append('description', newProduct.description);
+    
+    // Append selected media files
     for (let i = 0; i < mediaFiles.length; i++) {
       formData.append('images', mediaFiles[i]);
     }
 
     try {
       const currentToken = getToken();
-      const res = await fetch(`${API_URL}/api/products`, {
+      const res = nextStepUrl => fetch(`${API_URL}/api/products`, {
         method: 'POST',
         headers: { ...(currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {}) },
         body: formData
       });
 
-      const data = await res.json();
-      if (res.ok) {
+      const response = await fetch(`${API_URL}/api/products`, {
+        method: 'POST',
+        headers: { ...(currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {}) },
+        body: formData
+      });
+
+      const data = await response.json();
+      if (response.ok) {
         setNewProduct({ name: '', price: '', discountPrice: '', stock: '', category: '', description: '' });
         setMediaFiles([]);
         fetchData();
@@ -79,7 +95,6 @@ const Dashboard = () => {
       console.error('Network error adding product:', err);
     }
   };
-
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this product?')) return;
     try {

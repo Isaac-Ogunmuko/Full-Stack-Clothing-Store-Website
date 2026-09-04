@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 export default function Cart() {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
   useEffect(() => {
     const items = JSON.parse(localStorage.getItem('cartItems') || '[]');
@@ -24,9 +25,22 @@ export default function Cart() {
     localStorage.setItem('cartItems', JSON.stringify(updated));
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (Number(item.price) * (item.quantity || 1)), 0);
-  const shipping = cartItems.length > 0 ? 0.00 : 0.00; // Free shipping
+  // Calculate subtotal accurately respecting discounts
+  const subtotal = cartItems.reduce((sum, item) => {
+    const activePrice = Number(item.discountPrice !== undefined && item.discountPrice !== null && item.discountPrice !== '' ? item.discountPrice : item.price || 0);
+    return sum + (activePrice * (item.quantity || 1));
+  }, 0);
+
+  const shipping = 0.00; // Free shipping
   const total = subtotal + shipping;
+
+  const handleCheckout = () => {
+    if (cartItems.length === 0) {
+      alert("Your cart is empty!");
+      return;
+    }
+    navigate('/checkout'); // Routes to your checkout screen
+  };
 
   return (
     <div style={{ backgroundColor: "#fff", minHeight: "100vh", padding: "140px 30px 60px 30px", display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -49,8 +63,15 @@ export default function Cart() {
             {/* Cart Items List */}
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               {cartItems.map((item, index) => {
-                const itemPrice = Number(item.price || 0);
-                const itemImage = item.image || (item.images && item.images[0]) || null;
+                const currentPrice = Number(item.discountPrice !== undefined && item.discountPrice !== null && item.discountPrice !== '' ? item.discountPrice : item.price || 0);
+                const originalPrice = item.discountPrice ? Number(item.price) : null;
+                const hasDiscount = Boolean(originalPrice && originalPrice > currentPrice);
+
+                const rawImg = item.image || (item.images && item.images[0]) || null;
+                const itemImage = rawImg 
+                  ? (rawImg.startsWith('http') ? rawImg : `${API_URL}${rawImg.startsWith('/') ? '' : '/'}${rawImg}`)
+                  : null;
+
                 const itemName = item.name || item.title;
 
                 return (
@@ -67,7 +88,15 @@ export default function Cart() {
 
                       <div>
                         <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#111", marginBottom: "6px" }}>{itemName}</h3>
-                        <p style={{ fontSize: "15px", fontWeight: "bold", color: "#111", marginBottom: "10px" }}>${itemPrice.toFixed(2)}</p>
+                        
+                        {/* Correct Price / Discount Display */}
+                        <div style={{ display: "flex", alignItems: "baseline", gap: "10px", marginBottom: "10px" }}>
+                          <span style={{ fontSize: "15px", fontWeight: "bold", color: "#111" }}>${currentPrice.toFixed(2)}</span>
+                          {hasDiscount && (
+                            <span style={{ fontSize: "13px", color: "#777", textDecoration: "line-through" }}>${originalPrice.toFixed(2)}</span>
+                          )}
+                        </div>
+
                         <button onClick={() => removeItem(index)} style={{ background: "none", border: "none", color: "#d9534f", fontSize: "13px", cursor: "pointer", padding: 0, textDecoration: "underline" }}>
                           Remove
                         </button>
@@ -99,7 +128,7 @@ export default function Cart() {
 
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px", fontSize: "14px", color: "#555" }}>
                 <span>Shipping</span>
-                <span>{shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}</span>
+                <span>FREE</span>
               </div>
 
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "25px", fontSize: "18px", fontWeight: "bold", color: "#111", borderTop: "1px solid #eaeaea", paddingTop: "15px" }}>
@@ -108,7 +137,7 @@ export default function Cart() {
               </div>
 
               <button 
-                onClick={() => alert("Proceeding to checkout workflow...")}
+                onClick={handleCheckout}
                 style={{ backgroundColor: "#000", color: "#fff", padding: "15px", borderRadius: "24px", border: "none", width: "100%", textTransform: "uppercase", fontWeight: "bold", letterSpacing: "1px", cursor: "pointer" }}
               >
                 Proceed to Checkout

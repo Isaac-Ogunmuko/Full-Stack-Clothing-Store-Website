@@ -30,7 +30,7 @@ router.post('/', upload.fields([
     { name: 'video', maxCount: 1 }
 ]), async (req, res) => {
     try {
-        const { name, category, price, originalPrice, discountText, stock, description } = req.body;
+        const { name, category, price, originalPrice, discountText, discountPrice, stock, description } = req.body;
 
         const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`;
         const imageUrls = (req.files && req.files['images']) ? req.files['images'].map(file => baseUrl + file.filename) : [];
@@ -41,7 +41,7 @@ router.post('/', upload.fields([
             category,
             price,
             originalPrice,
-            discountText,
+            discountText: discountText || discountPrice, // Catches whatever key the frontend sends
             stock,
             description,
             images: imageUrls,

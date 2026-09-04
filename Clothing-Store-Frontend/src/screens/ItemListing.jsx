@@ -11,9 +11,9 @@ export default function ItemListing() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Fetch products from your backend API on component mount
+  // 1. Fetch products from your live backend API on component mount
   useEffect(() => {
-    fetch('http://localhost:8000/api/products')
+    fetch('https://clothing-store-backend-4z5g.onrender.com/api/products')
       .then(res => res.json())
       .then(data => {
         setProducts(data);

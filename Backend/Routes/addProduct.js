@@ -60,26 +60,25 @@ router.post('/', protectAdmin, upload.fields([
     console.log("🔥 HIT /api/products POST route!");
     
     try {
-        const { name, category, price, originalPrice, discountText, stock, description } = req.body;
+        const { name, category, price, originalPrice, discountPrice, stock, description } = req.body;
 
-        // Generate public URLs for the uploaded files safely
-        const baseUrl = 'http://localhost:8000/uploads/';
+        // Save relative paths so the frontend dynamically attaches the correct host (localhost or Render)
         const imagesField = req.files && req.files['images'] ? req.files['images'] : [];
         const videoField = req.files && req.files['video'] ? req.files['video'] : [];
 
-        const imageUrls = imagesField.map(file => baseUrl + file.filename);
-        const videoUrl = videoField.length > 0 ? baseUrl + videoField[0].filename : '';
+        const imageUrls = imagesField.map(file => `/uploads/${file.filename}`);
+        const videoUrl = videoField.length > 0 ? `/uploads/${videoField[0].filename}` : '';
 
         const newProduct = new Product({
             name,
             category,
             price,
             originalPrice,
-            discountText,
+            discountPrice: discountPrice !== '' ? discountPrice : null, // Fix discount price persistence
             stock,
             description,
             image: imageUrls.length > 0 ? imageUrls[0] : '', 
-            images: imageUrls,                    
+            images: imageUrls,                                     
             videoUrl
         });
 
@@ -97,7 +96,7 @@ router.post('/', protectAdmin, upload.fields([
 router.put('/:id', protectAdmin, async (req, res) => {
     console.log(`🔥 HIT /api/products/${req.params.id} PUT route!`);
     try {
-        const { name, category, price, originalPrice, discountText, stock, description } = req.body;
+        const { name, category, price, originalPrice, discountPrice, stock, description } = req.body;
 
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id,
@@ -106,7 +105,7 @@ router.put('/:id', protectAdmin, async (req, res) => {
                 category,
                 price,
                 originalPrice,
-                discountText,
+                discountPrice: discountPrice !== '' ? discountPrice : null,
                 stock,
                 description
             },

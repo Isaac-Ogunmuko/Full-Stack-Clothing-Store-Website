@@ -38,7 +38,7 @@ export default function ItemListing() {
     return 0;
   });
 
-  const itemsPerPage = 8; // Increased to show more per page like an ecommerce store
+  const itemsPerPage = 8;
   const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentProducts = sortedProducts.slice(startIndex, startIndex + itemsPerPage);
@@ -104,11 +104,11 @@ export default function ItemListing() {
           Showing {showingStart}-{showingEnd} of {sortedProducts.length} products
         </div>
 
-        {/* Product Grid Area - Fixed max-width behavior using auto-fill with fixed card widths */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 320px))", gap: "25px", justifyContent: "start" }}>
+        {/* Product Grid Area - Using flexbox or strict grid to prevent full-width stretching */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "25px", justifyContent: "flex-start" }}>
           
           {loading ? (
-            <p style={{ color: "#666", fontSize: "16px", gridColumn: "1 / -1", textAlign: "center", padding: "40px" }}>
+            <p style={{ color: "#666", fontSize: "16px", width: "100%", textAlign: "center", padding: "40px" }}>
               Loading products from database...
             </p>
           ) : currentProducts.length > 0 ? (
@@ -120,7 +120,7 @@ export default function ItemListing() {
               const primaryImage = product.image || (product.images && product.images.length > 0 ? product.images[0] : null);
 
               return (
-                <div key={productId} style={{ border: "1px solid #eaeaea", borderRadius: "12px", padding: "16px", backgroundColor: "#fff", display: "flex", flexDirection: "column", justifyContent: "space-between", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", opacity: isOutOfStock ? 0.7 : 1, transition: "transform 0.2s", cursor: "pointer" }}>
+                <div key={productId} style={{ width: "280px", border: "1px solid #eaeaea", borderRadius: "12px", padding: "16px", backgroundColor: "#fff", display: "flex", flexDirection: "column", justifyContent: "space-between", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", opacity: isOutOfStock ? 0.7 : 1, transition: "transform 0.2s" }}>
                   
                   <Link to={`/product/${productId}`} style={{ textDecoration: "none" }}>
                     <div style={{ position: "relative", width: "100%", height: "280px", backgroundColor: "#f5f5f5", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: "#888", fontSize: "14px", marginBottom: "15px", overflow: "hidden" }}>
@@ -155,14 +155,12 @@ export default function ItemListing() {
                   <div>
                     <Link to={`/product/${productId}`} style={{ textDecoration: "none" }}>
                       <h3 
-                        style={{ fontSize: "16px", fontWeight: "600", color: "#111", marginBottom: "8px", lineHeight: "1.4", height: "44px", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
-                        onMouseOver={(e) => e.target.style.textDecoration = "underline"}
-                        onMouseOut={(e) => e.target.style.textDecoration = "none"}
+                        style={{ fontSize: "15px", fontWeight: "600", color: "#111", marginBottom: "8px", lineHeight: "1.4", height: "42px", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
                       >
                         {productName}
                       </h3>
                     </Link>
-                    <p style={{ color: "#111", fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>${Number(product.price).toFixed(2)}</p>
+                    <p style={{ color: "#111", fontSize: "17px", fontWeight: "bold", marginBottom: "15px" }}>${Number(product.price).toFixed(2)}</p>
                   </div>
 
                   <button 
@@ -187,7 +185,7 @@ export default function ItemListing() {
               );
             })
           ) : (
-            <p style={{ color: "#666", fontSize: "16px", gridColumn: "1 / -1", textAlign: "center", padding: "40px" }}>
+            <p style={{ color: "#666", fontSize: "16px", width: "100%", textAlign: "center", padding: "40px" }}>
               No items found matching your search or category filter.
             </p>
           )}
@@ -204,7 +202,7 @@ export default function ItemListing() {
           {Array.from({ length: totalPages }, (_, index) => {
             const pageNumber = index + 1;
             return (
-              <button key={pageNumber} onClick={() => setCurrentPage(pageNumber)} style={{ backgroundColor: currentPage === pageNumber ? "#333" : "#f5f5f5", color: currentPage === pageNumber ? "#fff" : "#333", width: "35px", height: "35px", borderRadius: "50%", border: "none", cursor: "pointer", fontWeight: "bold" }}>{pageNumber}</page>
+              <button key={pageNumber} onClick={() => setCurrentPage(pageNumber)} style={{ backgroundColor: currentPage === pageNumber ? "#333" : "#f5f5f5", color: currentPage === pageNumber ? "#fff" : "#333", width: "35px", height: "35px", borderRadius: "50%", border: "none", cursor: "pointer", fontWeight: "bold" }}>{pageNumber}</button>
             );
           })}
           <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} style={{ backgroundColor: "#f5f5f5", color: "#333", padding: "0 15px", height: "35px", borderRadius: "20px", border: "none", cursor: "pointer", fontWeight: "bold" }}>NEXT</button>

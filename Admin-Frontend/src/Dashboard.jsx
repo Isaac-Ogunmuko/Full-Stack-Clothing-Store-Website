@@ -14,7 +14,9 @@ const Dashboard = () => {
   const [editForm, setEditForm] = useState({ name: '', price: '', discountPrice: '', stock: '', category: '', description: '' });
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  const token = localStorage.getItem('token');
+  
+  // Helper to dynamically check both token keys at the moment of request
+  const getToken = () => localStorage.getItem('token') || localStorage.getItem('adminToken');
 
   useEffect(() => {
     fetchData();
@@ -23,7 +25,8 @@ const Dashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const headers = { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
+      const currentToken = getToken();
+      const headers = { ...(currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {}) };
       const [prodRes, msgRes] = await Promise.all([
         fetch(`${API_URL}/api/products`, { headers }),
         fetch(`${API_URL}/api/messages`, { headers }).catch(() => ({ ok: false }))
@@ -56,9 +59,10 @@ const Dashboard = () => {
     }
 
     try {
+      const currentToken = getToken();
       const res = await fetch(`${API_URL}/api/products`, {
         method: 'POST',
-        headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+        headers: { ...(currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {}) },
         body: formData
       });
 
@@ -79,11 +83,17 @@ const Dashboard = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this product?')) return;
     try {
+      const currentToken = getToken();
       const res = await fetch(`${API_URL}/api/products/${id}`, {
         method: 'DELETE',
-        headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+        headers: { ...(currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {}) }
       });
-      if (res.ok) fetchData();
+      if (res.ok) {
+        fetchData();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(`Failed to delete product: ${data.message || res.statusText}`);
+      }
     } catch (err) {
       console.error('Error deleting product:', err);
     }
@@ -103,6 +113,7 @@ const Dashboard = () => {
 
   const handleSaveEdit = async (id) => {
     try {
+      const currentToken = getToken();
       const payload = {
         ...editForm,
         price: editForm.price !== '' ? Number(editForm.price) : 0,
@@ -114,7 +125,7 @@ const Dashboard = () => {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}) 
+          ...(currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {}) 
         },
         body: JSON.stringify(payload)
       });
@@ -145,7 +156,7 @@ const Dashboard = () => {
           <p style={{ margin: '5px 0 0', color: '#e0f2f1' }}>Manage your clothing inventory and customer inquiries.</p>
         </div>
         <button 
-          onClick={() => { localStorage.removeItem('token'); window.location.href = '/login'; }}
+          onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('adminToken'); window.location.href = '/login'; }}
           style={{ background: '#d32f2f', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
         >
           Logout

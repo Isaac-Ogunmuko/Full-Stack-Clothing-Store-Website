@@ -52,7 +52,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// 👕 Add Product Endpoint with Diagnostic Logging
+// 👕 Add Product Endpoint with Diagnostic Logging and Safe File Mapping
 router.post('/', protectAdmin, upload.fields([
     { name: 'images', maxCount: 5 },
     { name: 'video', maxCount: 1 }
@@ -62,7 +62,7 @@ router.post('/', protectAdmin, upload.fields([
     try {
         const { name, category, price, originalPrice, discountPrice, stock, description } = req.body;
 
-        // Save relative paths so the frontend dynamically attaches the correct host (localhost or Render)
+        // Safely map files if they exist in the request
         const imagesField = req.files && req.files['images'] ? req.files['images'] : [];
         const videoField = req.files && req.files['video'] ? req.files['video'] : [];
 
@@ -74,15 +74,15 @@ router.post('/', protectAdmin, upload.fields([
             category,
             price,
             originalPrice,
-            discountPrice: discountPrice !== '' ? discountPrice : null, // Fix discount price persistence
+            discountPrice: discountPrice !== '' && discountPrice !== undefined ? discountPrice : null,
             stock,
             description,
             image: imageUrls.length > 0 ? imageUrls[0] : '', 
-            images: imageUrls,                                     
+            images: imageUrls,                            
             videoUrl
         });
 
-        console.log("Saving new product with files:", newProduct);
+        console.log("Saving new product with relative file paths:", newProduct);
         await newProduct.save();
         
         res.status(201).json({ message: "Product added successfully", product: newProduct });
@@ -105,7 +105,7 @@ router.put('/:id', protectAdmin, async (req, res) => {
                 category,
                 price,
                 originalPrice,
-                discountPrice: discountPrice !== '' ? discountPrice : null,
+                discountPrice: discountPrice !== '' && discountPrice !== undefined ? discountPrice : null,
                 stock,
                 description
             },

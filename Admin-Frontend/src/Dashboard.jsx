@@ -53,7 +53,7 @@ const Dashboard = () => {
     Object.keys(newProduct).forEach(key => formData.append(key, newProduct[key]));
     
     for (let i = 0; i < mediaFiles.length; i++) {
-      formData.append('image', mediaFiles[i]);
+      formData.append('images', mediaFiles[i]);
     }
 
     try {

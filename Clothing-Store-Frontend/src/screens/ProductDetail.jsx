@@ -9,7 +9,6 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Image gallery & accordion states
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [shippingOpen, setShippingOpen] = useState(true);
@@ -45,32 +44,6 @@ export default function ProductDetail() {
       });
   }, [id]);
 
-  const handleAddToCart = () => {
-    if (!product) return;
-    
-    const existingCart = JSON.parse(localStorage.getItem('cartItems') || '[]');
-    const cartItemId = product._id || product.id;
-    const existingIndex = existingCart.findIndex(item => (item._id === cartItemId || item.id === cartItemId));
-
-    const primaryImage = product.images?.[selectedImageIndex] || product.image || (product.images?.[0]) || null;
-
-    if (existingIndex > -1) {
-      existingCart[existingIndex].quantity = (existingCart[existingIndex].quantity || 1) + 1;
-    } else {
-      existingCart.push({
-        ...product,
-        id: cartItemId,
-        image: primaryImage,
-        quantity: 1,
-        price: Number(product.price)
-      });
-    }
-
-    localStorage.setItem('cartItems', JSON.stringify(existingCart));
-    window.dispatchEvent(new Event('storage'));
-    navigate('/cart');
-  };
-
   if (loading) {
     return <div style={{ padding: "160px 30px", textAlign: "center", fontSize: "16px", color: "#666" }}>Loading product details...</div>;
   }
@@ -86,35 +59,61 @@ export default function ProductDetail() {
 
   const productName = product.name || product.title;
   
-  // Build images array safely (supports single `image` string or multiple `images` array)
+  // Handle images array or fallback single image
   let imagesList = [];
   if (product.images && Array.isArray(product.images) && product.images.length > 0) {
     imagesList = product.images;
   } else if (product.image) {
-    imagesList = [product.image, product.image, product.image]; // Mocking vertical thumbnails if only 1 image exists so the layout matches Etsy
-  } else {
-    imagesList = [];
+    // Generate mock vertical thumbnails if only 1 image exists so the gallery structure always displays
+    imagesList = [product.image, product.image, product.image];
   }
 
-  const activeImage = imagesList[selectedImageIndex] || imagesList[0] || null;
-  const price = Number(product.price || 0);
+  const activeImage = imagesList[selectedImageIndex] || imagesList[0] || product.image || null;
+
+  // Pricing & Admin Discount Fields Support
+  const currentPrice = Number(product.price || product.salePrice || 0);
+  const originalPrice = product.originalPrice || product.comparePrice || (product.discount ? currentPrice * 1.3 : null);
+  hasDiscount = originalPrice && originalPrice > currentPrice;
+  const discountPercent = hasDiscount ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100) : null;
+
+  const handleAddToCart = () => {
+    const existingCart = JSON.parse(localStorage.getItem('cartItems') || '[]');
+    const cartItemId = product._id || product.id;
+    const existingIndex = existingCart.findIndex(item => (item._id === cartItemId || item.id === cartItemId));
+
+    if (existingIndex > -1) {
+      existingCart[existingIndex].quantity = (existingCart[existingIndex].quantity || 1) + 1;
+    } else {
+      existingCart.push({
+        ...product,
+        id: cartItemId,
+        image: activeImage,
+        quantity: 1,
+        price: currentPrice
+      });
+    }
+
+    localStorage.setItem('cartItems', JSON.stringify(existingCart));
+    window.dispatchEvent(new Event('storage'));
+    navigate('/cart');
+  };
 
   return (
     <div style={{ backgroundColor: "#fff", minHeight: "100vh", padding: "140px 30px 60px 30px", display: "flex", justifyContent: "center" }}>
-      <div style={{ width: "100%", maxWidth: "1250px", display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: "50px", alignItems: "start" }}>
+      <div style={{ width: "100%", maxWidth: "1300px", display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: "50px", alignItems: "start" }}>
         
-        {/* Left Side: Etsy Gallery Layout (Thumbnails Stacked on Left + Main Preview) */}
-        <div style={{ display: "flex", gap: "15px" }}>
+        {/* Left Side: Etsy Gallery Layout (Forced visible vertical thumbnails + Main Preview) */}
+        <div style={{ display: "flex", gap: "15px", width: "100%" }}>
           
           {/* Vertical Thumbnails Column */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: "70px" }}>
             {imagesList.map((imgUrl, idx) => (
               <div 
                 key={idx}
                 onClick={() => setSelectedImageIndex(idx)}
                 style={{
-                  width: "65px",
-                  height: "75px",
+                  width: "70px",
+                  height: "80px",
                   borderRadius: "6px",
                   overflow: "hidden",
                   border: selectedImageIndex === idx ? "2px solid #111" : "1px solid #ddd",
@@ -123,17 +122,17 @@ export default function ProductDetail() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  opacity: selectedImageIndex === idx ? 1 : 0.7,
+                  opacity: selectedImageIndex === idx ? 1 : 0.6,
                   transition: "all 0.2s"
                 }}
               >
-                <img src={imgUrl} alt={`${productName} thumbnail ${idx}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={imgUrl} alt={`Thumbnail ${idx}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
             ))}
           </div>
 
           {/* Main Large Product Preview Frame */}
-          <div style={{ flex: 1, height: "550px", backgroundColor: "#f9f9f9", borderRadius: "10px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #eaeaea" }}>
+          <div style={{ flex: 1, height: "550px", backgroundColor: "#f9f9f9", borderRadius: "10px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #eaeaea", position: "relative" }}>
             {activeImage ? (
               <img src={activeImage} alt={productName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
@@ -143,7 +142,7 @@ export default function ProductDetail() {
 
         </div>
 
-        {/* Right Side: Product Info, Pricing & Accordions */}
+        {/* Right Side: Product Info, Admin Discounts & Accordions */}
         <div style={{ display: "flex", flexDirection: "column" }}>
           
           <span style={{ fontSize: "12px", color: "#666", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>
@@ -154,11 +153,31 @@ export default function ProductDetail() {
             {productName}
           </h1>
 
-          <div style={{ display: "flex", alignItems: "baseline", gap: "12px", marginBottom: "20px" }}>
-            <span style={{ fontSize: "28px", fontWeight: "bold", color: "#111" }}>${price.toFixed(2)}</span>
-            <span style={{ fontSize: "13px", color: "#00a651", fontWeight: "600", backgroundColor: "#e6f4ea", padding: "4px 8px", borderRadius: "4px" }}>
-              FREE shipping
-            </span>
+          {/* Pricing & Admin Discount Display */}
+          <div style={{ marginBottom: "20px" }}>
+            {hasDiscount ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: "12px" }}>
+                  <span style={{ fontSize: "26px", fontWeight: "bold", color: "#111" }}>Now ${currentPrice.toFixed(2)}</span>
+                  <span style={{ fontSize: "18px", color: "#777", textDecoration: "line-through" }}>${Number(originalPrice).toFixed(2)}</span>
+                </div>
+                <div>
+                  <span style={{ fontSize: "12px", color: "#d9534f", fontWeight: "bold", backgroundColor: "#fdf2f2", padding: "3px 8px", borderRadius: "4px" }}>
+                    {discountPercent}% off • Sale ends soon
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize: "28px", fontWeight: "bold", color: "#111" }}>
+                ${currentPrice.toFixed(2)}
+              </div>
+            )}
+            
+            <div style={{ marginTop: "8px" }}>
+              <span style={{ fontSize: "13px", color: "#00a651", fontWeight: "600", backgroundColor: "#e6f4ea", padding: "4px 8px", borderRadius: "4px" }}>
+                FREE shipping
+              </span>
+            </div>
           </div>
 
           <button 

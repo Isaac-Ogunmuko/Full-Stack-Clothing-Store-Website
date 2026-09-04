@@ -9,7 +9,8 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Accordion toggle states
+  // Image gallery & accordion states
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [shippingOpen, setShippingOpen] = useState(true);
 
@@ -25,8 +26,7 @@ export default function ProductDetail() {
         setProduct(data);
         setLoading(false);
       })
-      .catch(err => {
-        // Fallback fetch all
+      .catch(() => {
         fetch('https://clothing-store-backend-4z5g.onrender.com/api/products')
           .then(res => res.json())
           .then(allProducts => {
@@ -48,11 +48,11 @@ export default function ProductDetail() {
   const handleAddToCart = () => {
     if (!product) return;
     
-    // Retrieve existing cart from localStorage or initialize empty array
     const existingCart = JSON.parse(localStorage.getItem('cartItems') || '[]');
-    
     const cartItemId = product._id || product.id;
     const existingIndex = existingCart.findIndex(item => (item._id === cartItemId || item.id === cartItemId));
+
+    const primaryImage = product.images?.[selectedImageIndex] || product.image || (product.images?.[0]) || null;
 
     if (existingIndex > -1) {
       existingCart[existingIndex].quantity = (existingCart[existingIndex].quantity || 1) + 1;
@@ -60,17 +60,14 @@ export default function ProductDetail() {
       existingCart.push({
         ...product,
         id: cartItemId,
+        image: primaryImage,
         quantity: 1,
         price: Number(product.price)
       });
     }
 
     localStorage.setItem('cartItems', JSON.stringify(existingCart));
-    
-    // Trigger custom event so header cart counters update instantly if applicable
     window.dispatchEvent(new Event('storage'));
-
-    // Redirect straight to cart page
     navigate('/cart');
   };
 
@@ -88,23 +85,65 @@ export default function ProductDetail() {
   }
 
   const productName = product.name || product.title;
-  const primaryImage = product.image || (product.images && product.images.length > 0 ? product.images[0] : null);
+  
+  // Build images array safely (supports single `image` string or multiple `images` array)
+  let imagesList = [];
+  if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+    imagesList = product.images;
+  } else if (product.image) {
+    imagesList = [product.image, product.image, product.image]; // Mocking vertical thumbnails if only 1 image exists so the layout matches Etsy
+  } else {
+    imagesList = [];
+  }
+
+  const activeImage = imagesList[selectedImageIndex] || imagesList[0] || null;
   const price = Number(product.price || 0);
 
   return (
     <div style={{ backgroundColor: "#fff", minHeight: "100vh", padding: "140px 30px 60px 30px", display: "flex", justifyContent: "center" }}>
-      <div style={{ width: "100%", maxWidth: "1200px", display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "60px", alignItems: "start" }}>
+      <div style={{ width: "100%", maxWidth: "1250px", display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: "50px", alignItems: "start" }}>
         
-        {/* Left Column: Product Image */}
-        <div style={{ width: "100%", height: "550px", backgroundColor: "#f9f9f9", borderRadius: "12px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #eaeaea" }}>
-          {primaryImage ? (
-            <img src={primaryImage} alt={productName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            <span>No Image Available</span>
-          )}
+        {/* Left Side: Etsy Gallery Layout (Thumbnails Stacked on Left + Main Preview) */}
+        <div style={{ display: "flex", gap: "15px" }}>
+          
+          {/* Vertical Thumbnails Column */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {imagesList.map((imgUrl, idx) => (
+              <div 
+                key={idx}
+                onClick={() => setSelectedImageIndex(idx)}
+                style={{
+                  width: "65px",
+                  height: "75px",
+                  borderRadius: "6px",
+                  overflow: "hidden",
+                  border: selectedImageIndex === idx ? "2px solid #111" : "1px solid #ddd",
+                  cursor: "pointer",
+                  backgroundColor: "#f5f5f5",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: selectedImageIndex === idx ? 1 : 0.7,
+                  transition: "all 0.2s"
+                }}
+              >
+                <img src={imgUrl} alt={`${productName} thumbnail ${idx}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Main Large Product Preview Frame */}
+          <div style={{ flex: 1, height: "550px", backgroundColor: "#f9f9f9", borderRadius: "10px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #eaeaea" }}>
+            {activeImage ? (
+              <img src={activeImage} alt={productName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <span>No Image Available</span>
+            )}
+          </div>
+
         </div>
 
-        {/* Right Column: Product Info & Etsy-style Sections */}
+        {/* Right Side: Product Info, Pricing & Accordions */}
         <div style={{ display: "flex", flexDirection: "column" }}>
           
           <span style={{ fontSize: "12px", color: "#666", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>
@@ -145,7 +184,7 @@ export default function ProductDetail() {
             Add to cart
           </button>
 
-          {/* Item Details Accordion Section */}
+          {/* Item Details Accordion */}
           <div style={{ borderTop: "1px solid #eaeaea", padding: "15px 0" }}>
             <div 
               onClick={() => setDetailsOpen(!detailsOpen)}
@@ -168,7 +207,7 @@ export default function ProductDetail() {
             )}
           </div>
 
-          {/* Shipping and Return Policies Accordion Section */}
+          {/* Shipping and Return Policies Accordion */}
           <div style={{ borderTop: "1px solid #eaeaea", borderBottom: "1px solid #eaeaea", padding: "15px 0" }}>
             <div 
               onClick={() => setShippingOpen(!shippingOpen)}

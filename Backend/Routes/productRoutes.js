@@ -4,7 +4,6 @@ const multer = require('multer');
 const path = require('path');
 const Product = require('../Modals/product');
 
-
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, path.join(__dirname, '../uploads'));
@@ -16,7 +15,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-
 router.get('/', async (req, res) => {
     try {
         const products = await Product.find({});
@@ -27,20 +25,19 @@ router.get('/', async (req, res) => {
     }
 });
 
-
 router.post('/', upload.fields([
     { name: 'images', maxCount: 5 },
     { name: 'video', maxCount: 1 }
 ]), async (req, res) => {
     try {
-        const { title, category, price, originalPrice, discountText, stock, description } = req.body;
+        const { name, category, price, originalPrice, discountText, stock, description } = req.body;
 
         const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`;
         const imageUrls = (req.files && req.files['images']) ? req.files['images'].map(file => baseUrl + file.filename) : [];
         const videoUrl = (req.files && req.files['video']) ? baseUrl + req.files['video'][0].filename : '';
 
         const newProduct = new Product({
-            title,
+            name,
             category,
             price,
             originalPrice,
@@ -77,7 +74,6 @@ router.put('/:id', async (req, res) => {
         res.status(500).json({ error: "Server error", details: error.message });
     }
 });
-
 
 router.delete('/:id', async (req, res) => {
     try {

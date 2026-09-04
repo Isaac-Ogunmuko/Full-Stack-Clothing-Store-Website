@@ -60,7 +60,7 @@ router.post('/', protectAdmin, upload.fields([
     console.log("🔥 HIT /api/products POST route!");
     
     try {
-        const { title, category, price, originalPrice, discountText, stock, description } = req.body;
+        const { name, category, price, originalPrice, discountText, stock, description } = req.body;
 
         // Generate public URLs for the uploaded files safely
         const baseUrl = 'http://localhost:8000/uploads/';
@@ -71,7 +71,7 @@ router.post('/', protectAdmin, upload.fields([
         const videoUrl = videoField.length > 0 ? baseUrl + videoField[0].filename : '';
 
         const newProduct = new Product({
-            title,
+            name,
             category,
             price,
             originalPrice,
@@ -93,16 +93,16 @@ router.post('/', protectAdmin, upload.fields([
     }
 });
 
-// ✏️ UPDATE Product Endpoint (Fixes the update failure popup)
+// ✏️ UPDATE Product Endpoint
 router.put('/:id', protectAdmin, async (req, res) => {
     console.log(`🔥 HIT /api/products/${req.params.id} PUT route!`);
     try {
-        const { title, category, price, originalPrice, discountText, stock, description } = req.body;
+        const { name, category, price, originalPrice, discountText, stock, description } = req.body;
 
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id,
             { 
-                title,
+                name,
                 category,
                 price,
                 originalPrice,

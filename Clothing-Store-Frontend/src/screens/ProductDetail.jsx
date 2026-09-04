@@ -16,7 +16,6 @@ export default function ProductDetail() {
   useEffect(() => {
     if (!id) return;
 
-    // Use https:// explicitly to avoid Mixed Content errors
     fetch(`https://clothing-store-backend-4z5g.onrender.com/api/products/${id}`)
       .then(res => {
         if (!res.ok) throw new Error("Product not found");
@@ -60,7 +59,6 @@ export default function ProductDetail() {
 
   const productName = product.name || product.title;
   
-  // Format image URLs securely (replace http with https if needed)
   const sanitizeImg = (url) => {
     if (!url) return null;
     return url.replace('http://', 'https://');
@@ -76,9 +74,29 @@ export default function ProductDetail() {
 
   const activeImage = imagesList[selectedImageIndex] || imagesList[0] || null;
 
-  // Pricing & Admin Discount Calculations
-  const currentPrice = Number(product.price || product.salePrice || 0);
-  const originalPrice = product.originalPrice || product.comparePrice || (product.discount ? currentPrice * 1.3 : null);
+  // --- PRICING & ADMIN DISCOUNT FIX ---
+  // Check all possible variations of base price vs sale/discount price from admin dashboard
+  const rawPrice = Number(product.price || 0);
+  const rawSalePrice = Number(product.salePrice || product.discountPrice || 0);
+  const rawOriginalPrice = Number(product.originalPrice || product.comparePrice || 0);
+
+  let currentPrice = rawPrice;
+  let originalPrice = null;
+
+  if (rawSalePrice > 0 && rawSalePrice < rawPrice) {
+    // Admin set a salePrice lower than base price
+    currentPrice = rawSalePrice;
+    originalPrice = rawPrice;
+  } else if (rawOriginalPrice > rawPrice) {
+    // Admin set an originalPrice higher than base price
+    currentPrice = rawPrice;
+    originalPrice = rawOriginalPrice;
+  } else if (product.discount && Number(product.discount) > 0) {
+    // Fallback if discount percentage/amount flag is stored
+    originalPrice = rawPrice;
+    currentPrice = rawPrice * (1 - Number(product.discount) / 100);
+  }
+
   const hasDiscount = Boolean(originalPrice && originalPrice > currentPrice);
   const discountPercent = hasDiscount ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100) : null;
 
@@ -144,7 +162,7 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {/* Right Side: Product Info & Discounts */}
+        {/* Right Side: Product Info & Corrected Discounts */}
         <div style={{ display: "flex", flexDirection: "column" }}>
           <span style={{ fontSize: "12px", color: "#666", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>
             EluxFashion • Ships from Yonkers, NY

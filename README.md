@@ -1,4 +1,4 @@
-# Full-Stack E-Commerce Clothing Store
+# Full-Stack E-Commerce Web Application
 
 A scalable full-stack e-commerce web application engineered with modern JavaScript frameworks, featuring dynamic product schema modeling, guest checkout flows, an interactive admin dashboard, and robust backend routing.
 
